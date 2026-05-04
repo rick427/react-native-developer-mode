@@ -1,0 +1,41 @@
+{
+  "name": "@rick47/react-native-developer-mode",
+  "version": "1.0.0",
+  "description": "A lightweight React Native library to detect if developer mode is enabled on Android and iOS.",
+  "main": "lib/commonjs/index.js",
+  "module": "lib/module/index.js",
+  "types": "lib/typescript/index.d.ts",
+  "react-native": "src/index.ts",
+  "source": "src/index.ts",
+  "files": [
+    "src",
+    "lib",
+    "android",
+    "ios",
+    "react-native-developer-mode.podspec"
+  ],
+  "keywords": [
+    "react-native",
+    "developer-mode",
+    "android",
+    "ios",
+    "security",
+    "developer-options"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rick47/react-native-developer-mode.git"
+  },
+  "author": "Richard",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "typescript": "tsc --noEmit"
+  }
+}
