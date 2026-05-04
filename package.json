@@ -1,5 +1,5 @@
 {
-  "name": "@rick47/react-native-developer-mode",
+  "name": "@rick427/react-native-developer-mode",
   "version": "1.0.0",
   "description": "A lightweight React Native library to detect if developer mode is enabled on Android and iOS.",
   "main": "lib/commonjs/index.js",
@@ -24,7 +24,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/rick47/react-native-developer-mode.git"
+    "url": "https://github.com/rick427/react-native-developer-mode.git"
   },
   "author": "Richard",
   "license": "MIT",
