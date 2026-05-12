@@ -5,7 +5,8 @@
     "lib": ["ES2017"],
     "strict": true,
     "declaration": true,
-    "outDir": "lib/typescript",
+    "declarationMap": true,
+    "outDir": "lib",
     "rootDir": "src",
     "skipLibCheck": true
   },
