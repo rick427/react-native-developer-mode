@@ -1,8 +1,8 @@
-#import <React/RCTBridgeModule.h>
+#import <React/RCTEventEmitter.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface DeveloperMode : NSObject <RCTBridgeModule>
+@interface DeveloperMode : RCTEventEmitter <RCTBridgeModule>
 @end
 
 NS_ASSUME_NONNULL_END

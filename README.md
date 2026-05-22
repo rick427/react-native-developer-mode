@@ -15,7 +15,7 @@
 
 ---
 
-A simple, lightweight React Native library that detects whether **Developer Mode** (Android Developer Options / iOS Developer Mode) is active on the device.
+A simple, lightweight React Native library that detects whether **Developer Mode** (Android Developer Options / iOS Developer Mode) is active on the device — including real-time detection while the app is running.
 
 ---
 
@@ -23,6 +23,7 @@ A simple, lightweight React Native library that detects whether **Developer Mode
 
 - ✅ Android: Detects Developer Options and USB debugging (ADB)
 - ✅ iOS 16+: Detects Developer Mode via Apple's `DeviceCheck` framework
+- ✅ Real-time listener — catches users who enable dev mode while the app is open or backgrounded
 - ✅ Zero dependencies
 - ✅ Fully typed (TypeScript)
 - ✅ Promise-based async API
@@ -51,6 +52,8 @@ No extra steps required — the module is auto-linked.
 
 ## Usage
 
+### One-shot read
+
 ```ts
 import { isDeveloperModeEnabled, checkDeveloperMode } from '@rick427/react-native-developer-mode';
 
@@ -64,13 +67,34 @@ const isDevMode = await checkDeveloperMode();
 console.log(isDevMode); // true | false
 ```
 
+### Real-time listener
+
+Subscribe to changes so your app reacts the moment a user enables developer mode — even if they do it while the app is backgrounded.
+
+```ts
+import { useEffect } from 'react';
+import { addDeveloperModeListener } from '@rick427/react-native-developer-mode';
+
+useEffect(() => {
+  const subscription = addDeveloperModeListener((result) => {
+    if (result.isDeveloperModeEnabled) {
+      // warn the user, log the event, or take protective action
+      console.warn('Developer mode was enabled!');
+    }
+  });
+
+  // Always clean up to avoid memory leaks
+  return () => subscription.remove();
+}, []);
+```
+
 ---
 
 ## API
 
 ### `isDeveloperModeEnabled(): Promise<DeveloperModeResult>`
 
-Returns a promise that resolves with:
+Reads the current state once. Returns a promise that resolves with:
 
 | Field | Type | Description |
 |---|---|---|
@@ -80,6 +104,28 @@ Returns a promise that resolves with:
 ### `checkDeveloperMode(): Promise<boolean>`
 
 Convenience helper. Resolves to `true` if developer mode is active on the current platform.
+
+### `addDeveloperModeListener(callback): EmitterSubscription`
+
+Subscribes to real-time developer-mode state changes. Returns an `EmitterSubscription` — call `.remove()` to unsubscribe.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `callback` | `(result: DeveloperModeResult) => void` | Called whenever the developer-mode state changes |
+
+---
+
+## Platform behaviour
+
+| Scenario | Android | iOS |
+|---|---|---|
+| App open, dev mode toggled | ✅ Fires immediately via `ContentObserver` | ⚠️ Fires on next foreground |
+| App backgrounded, dev mode toggled, app foregrounded | ✅ Fires immediately on toggle | ✅ Fires on foreground |
+| App cold-started after dev mode was already on | ✅ One-shot read returns `true` | ✅ One-shot read returns `true` |
+
+> **Android** uses a `ContentObserver` on the system settings URI — it fires the instant the value changes in the settings database, regardless of app state.
+>
+> **iOS** has no system-level callback for this setting. The listener re-checks `DCDevice.currentDevice.developerModeEnabled` every time the app comes back to the foreground and only emits if the value changed.
 
 ---
 
