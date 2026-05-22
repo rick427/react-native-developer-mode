@@ -26,12 +26,20 @@ const CHANGE_EVENT = 'developerModeChanged';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
+/**
+ * The result object returned by {@link isDeveloperModeEnabled} and passed
+ * to every {@link addDeveloperModeListener} callback.
+ */
 export interface DeveloperModeResult {
-  /** Whether developer mode / developer options is active. */
+  /**
+   * `true` when the device has Developer Options (Android) or Developer Mode
+   * (iOS 16+) actively enabled.
+   */
   isDeveloperModeEnabled: boolean;
   /**
-   * Android only: whether USB debugging (ADB) is enabled.
-   * Always `false` on iOS.
+   * `true` when USB debugging (ADB) is enabled.
+   *
+   * **Android only** — always `false` on iOS because ADB is an Android concept.
    */
   isAdbEnabled: boolean;
 }
@@ -39,9 +47,20 @@ export interface DeveloperModeResult {
 // ── One-shot read ──────────────────────────────────────────────────────────
 
 /**
- * Reads the current developer-mode state once.
+ * Reads the current developer-mode state **once** and resolves with the
+ * result. Use {@link addDeveloperModeListener} if you need ongoing updates.
+ *
+ * Returns `{ isDeveloperModeEnabled: false, isAdbEnabled: false }` on
+ * unsupported platforms.
  *
  * @returns A promise that resolves with {@link DeveloperModeResult}.
+ *
+ * @example
+ * ```ts
+ * const result = await isDeveloperModeEnabled();
+ * console.log(result.isDeveloperModeEnabled); // true | false
+ * console.log(result.isAdbEnabled);           // true | false (Android only)
+ * ```
  */
 export async function isDeveloperModeEnabled(): Promise<DeveloperModeResult> {
   if (Platform.OS !== 'android' && Platform.OS !== 'ios') {
@@ -51,7 +70,16 @@ export async function isDeveloperModeEnabled(): Promise<DeveloperModeResult> {
 }
 
 /**
- * Convenience helper that resolves to `true` when developer mode is active.
+ * Convenience helper that resolves to `true` when developer mode is active
+ * on the current platform. Equivalent to calling `isDeveloperModeEnabled()`
+ * and reading only the `isDeveloperModeEnabled` field.
+ *
+ * @example
+ * ```ts
+ * if (await checkDeveloperMode()) {
+ *   Alert.alert('Developer mode is active');
+ * }
+ * ```
  */
 export async function checkDeveloperMode(): Promise<boolean> {
   const result = await isDeveloperModeEnabled();
@@ -61,31 +89,44 @@ export async function checkDeveloperMode(): Promise<boolean> {
 // ── Real-time listener ─────────────────────────────────────────────────────
 
 /**
- * Subscribes to developer-mode state changes.
+ * Subscribes to real-time developer-mode state changes and returns an
+ * {@link EmitterSubscription}. Always call `.remove()` on it when you are
+ * done (e.g. in a `useEffect` cleanup) to avoid memory leaks.
  *
- * **Android** — the callback fires immediately whenever the user toggles
- * Developer Options or USB debugging in the Settings app, even while your
- * app is running in the background. Powered by a `ContentObserver` on the
- * system settings URI.
+ * ### Platform behaviour
  *
- * **iOS** — Apple provides no system-level callback for this setting, so the
- * callback fires when the app returns to the foreground *and* the value has
- * changed since the listener was last active.
+ * **Android** — powered by a `ContentObserver` on the system settings URI.
+ * The callback fires the instant the value changes in the settings database,
+ * regardless of whether the app is in the foreground or background.
+ *
+ * **iOS** — Apple provides no system-level callback for this setting.
+ * The module registers for `UIApplicationWillEnterForegroundNotification`
+ * and re-checks `DCDevice.currentDevice.developerModeEnabled` every time
+ * the app returns to the foreground, emitting only when the value has changed.
+ *
+ * @param callback - Invoked with the latest {@link DeveloperModeResult}
+ *   whenever the developer-mode state changes.
+ * @returns An {@link EmitterSubscription} — call `.remove()` to unsubscribe.
  *
  * @example
  * ```ts
- * const subscription = addDeveloperModeListener((result) => {
- *   if (result.isDeveloperModeEnabled) {
- *     // warn the user or take protective action
- *   }
- * });
+ * import { useEffect } from 'react';
+ * import { addDeveloperModeListener } from '@rick427/react-native-developer-mode';
  *
- * // Clean up when done (e.g. in useEffect return)
- * return () => subscription.remove();
+ * function useDevModeGuard() {
+ *   useEffect(() => {
+ *     const sub = addDeveloperModeListener(({ isDeveloperModeEnabled, isAdbEnabled }) => {
+ *       if (isDeveloperModeEnabled) {
+ *         console.warn('Developer mode was enabled!');
+ *       }
+ *       if (isAdbEnabled) {
+ *         console.warn('USB debugging was enabled!');
+ *       }
+ *     });
+ *     return () => sub.remove();
+ *   }, []);
+ * }
  * ```
- *
- * @param callback Invoked with the latest {@link DeveloperModeResult} on change.
- * @returns An {@link EmitterSubscription} — call `.remove()` to unsubscribe.
  */
 export function addDeveloperModeListener(
   callback: (result: DeveloperModeResult) => void

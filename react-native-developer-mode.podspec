@@ -15,5 +15,10 @@ Pod::Spec.new do |s|
 
   s.source_files = "ios/**/*.{h,m,mm}"
 
+  # DeviceCheck is used on iOS 16+ for DCDevice.developerModeEnabled.
+  # It is a system framework so no extra install is needed; declaring it
+  # here ensures Xcode links it correctly.
+  s.frameworks = "DeviceCheck"
+
   s.dependency "React-Core"
 end
